@@ -9,18 +9,18 @@
 
 #define DEFAULT_PORT 80
 #define BUFFER_SIZE 1024
-
+// Default HTTP port and buffer size
 int request_count = 0;
 int total_received_bytes = 0;
 int total_sent_bytes = 0;
 pthread_mutex_t stats_mutex = PTHREAD_MUTEX_INITIALIZER;
-
+// Variables to store server stats and mutex to protect them
 void handle_client(int client_socket);
 void send_404(int client_socket);
 void send_static_file(int client_socket, const char *filepath);
 void send_stats(int client_socket);
 void send_calc_result(int client_socket, const char *query);
-
+// Function prototypes
 void *client_thread(void *arg) {
     int client_socket = *(int *)arg;
     free(arg);
@@ -28,7 +28,7 @@ void *client_thread(void *arg) {
     close(client_socket);
     return NULL;
 }
-
+// Function to handle a client connection
 int main(int argc, char *argv[]) {
     int port = DEFAULT_PORT;
     int opt;
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(port);
-
+// Create a socket and bind it to the specified port
     if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         perror("bind");
         close(server_socket);
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     close(server_socket);
     return 0;
 }
-
+// Main server loop to accept incoming connections
 void handle_client(int client_socket) {
     char buffer[BUFFER_SIZE];
     int received_bytes = recv(client_socket, buffer, BUFFER_SIZE - 1, 0);
@@ -121,7 +121,7 @@ void handle_client(int client_socket) {
         send_404(client_socket);
     }
 }
-
+// Function to handle a client connection
 void send_404(int client_socket) {
     const char *response = "HTTP/1.1 404 Not Found\r\n"
                            "Content-Length: 13\r\n"
@@ -133,7 +133,7 @@ void send_404(int client_socket) {
     total_sent_bytes += strlen(response);
     pthread_mutex_unlock(&stats_mutex);
 }
-
+// Function to send a 404 Not Found response
 void send_static_file(int client_socket, const char *filepath) {
     char fullpath[512];
     snprintf(fullpath, sizeof(fullpath), "static/%s", filepath);
@@ -168,7 +168,7 @@ void send_static_file(int client_socket, const char *filepath) {
     total_sent_bytes += header_length + file_stat.st_size;
     pthread_mutex_unlock(&stats_mutex);
 }
-
+// Function to send a static file
 void send_stats(int client_socket) {
     char response[BUFFER_SIZE];
     int response_length = snprintf(response, sizeof(response),
@@ -188,7 +188,7 @@ void send_stats(int client_socket) {
     total_sent_bytes += response_length;
     pthread_mutex_unlock(&stats_mutex);
 }
-
+//  Function to send server stats
 void send_calc_result(int client_socket, const char *query) {
     int a = 0, b = 0;
     sscanf(query, "a=%d&b=%d", &a, &b);
